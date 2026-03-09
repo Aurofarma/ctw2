@@ -361,7 +361,8 @@
 
         <!-- NFC Visual Zone -->
         <div class="glass-card rounded-2xl p-6">
-          <div id="nfc-zone" class="relative flex flex-col items-center justify-center py-10 gap-6">
+          <div id="nfc-zone" class="relative flex flex-col items-center justify-center py-6 gap-5">
+
             <!-- Animated NFC rings -->
             <div class="relative flex items-center justify-center w-40 h-40">
               <div id="nfc-ring-1" class="nfc-ring absolute w-40 h-40 rounded-full border-2 border-gold/30"></div>
@@ -374,25 +375,38 @@
                 </svg>
               </div>
             </div>
+
             <!-- Status indicator -->
             <div id="nfc-status" class="flex items-center gap-2">
-              <div class="w-2 h-2 rounded-full bg-gold blink"></div>
-              <span class="text-gold text-sm font-medium">Esperando sticker NFC...</span>
+              <div class="w-2 h-2 rounded-full bg-gray-500"></div>
+              <span class="text-gray-400 text-sm font-medium">Scanner inactivo</span>
             </div>
-            <p class="text-gray-500 text-xs text-center px-4">Acerca el sticker NFC al lector.<br>El sistema capturará el ID automáticamente.</p>
-          </div>
 
-          <!-- Hidden input that captures NFC data — keeps focus trap active -->
-          <input
-            type="text"
-            id="nfc-capture-input"
-            class="opacity-0 absolute w-0 h-0 pointer-events-none"
-            autocomplete="off"
-            autocorrect="off"
-            autocapitalize="off"
-            spellcheck="false"
-            aria-hidden="true"
-          >
+            <!-- ACTIVATION BUTTON — required for browser focus policy on HTTPS -->
+            <button id="nfc-activate-btn"
+              class="w-full py-4 gold-gradient text-oxford-dark font-bold rounded-xl hover:shadow-lg hover:shadow-gold/30 transition-all active:scale-[0.98] flex items-center justify-center gap-3 text-base">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"/>
+              </svg>
+              Activar Scanner NFC
+            </button>
+
+            <!-- The visible (but styled) input that actually receives NFC data -->
+            <div id="nfc-input-wrapper" class="w-full hidden">
+              <p class="text-xs text-gray-500 text-center mb-2">✅ Scanner activo — acerca el sticker NFC ahora</p>
+              <input
+                type="text"
+                id="nfc-capture-input"
+                placeholder="Esperando datos NFC..."
+                class="w-full px-4 py-3 bg-oxford-dark border-2 border-gold/50 rounded-xl text-white text-center placeholder-gray-600 focus:outline-none focus:border-gold transition-all font-mono tracking-widest"
+                autocomplete="off"
+                autocorrect="off"
+                autocapitalize="characters"
+                spellcheck="false"
+              >
+              <p class="text-xs text-gray-600 text-center mt-2">El campo se llenará solo al escanear</p>
+            </div>
+          </div>
         </div>
 
         <!-- Last scanned history -->
@@ -510,7 +524,6 @@ let nfcScannerActive = false;
 function startNFCEngine() {
   nfcScannerActive = true;
   nfcBuffer = '';
-  // refocus helper: mantiene el input oculto activo para capturar datos
   focusNFCInput();
 }
 
@@ -518,68 +531,106 @@ function stopNFCEngine() {
   nfcScannerActive = false;
   nfcBuffer = '';
   clearTimeout(nfcTimeout);
+  // Reset UI
+  const btn = document.getElementById('nfc-activate-btn');
+  const wrapper = document.getElementById('nfc-input-wrapper');
+  if (btn) btn.classList.remove('hidden');
+  if (wrapper) wrapper.classList.add('hidden');
 }
 
 function focusNFCInput() {
   if (!nfcScannerActive) return;
   const inp = document.getElementById('nfc-capture-input');
-  if (inp) inp.focus();
+  if (inp) {
+    inp.focus();
+    inp.select();
+  }
+}
+
+function activateNFCScanner() {
+  // Show/hide UI elements
+  document.getElementById('nfc-activate-btn').classList.add('hidden');
+  document.getElementById('nfc-input-wrapper').classList.remove('hidden');
+  setNFCStatus('active');
+
+  // Start engine — must happen inside a user gesture (click) for HTTPS
+  nfcScannerActive = true;
+  nfcBuffer = '';
+
+  // Focus the visible input immediately (allowed because we're inside a click handler)
+  const inp = document.getElementById('nfc-capture-input');
+  if (inp) {
+    inp.value = '';
+    inp.focus();
+  }
 }
 
 // Captura global de teclado — actúa como scanner HID listener
 document.addEventListener('keydown', function(e) {
   if (!nfcScannerActive) return;
+  // Don't intercept if user is typing in manual search input
+  if (document.activeElement && document.activeElement.id === 'manual-asset-id') return;
 
-  // Enter = fin de transmisión NFC
   if (e.key === 'Enter') {
     e.preventDefault();
     if (nfcBuffer.trim().length > 0) {
       const captured = nfcBuffer.trim();
       nfcBuffer = '';
       clearTimeout(nfcTimeout);
+      // Clear the visible input
+      const inp = document.getElementById('nfc-capture-input');
+      if (inp) inp.value = '';
       processNFCScan(captured);
     }
     return;
   }
 
-  // Solo caracteres imprimibles (ignora Shift, Ctrl, etc.)
   if (e.key.length === 1) {
     nfcBuffer += e.key.toUpperCase();
-
-    // Reset timeout: si pasan 150ms sin nuevo char → procesar
     clearTimeout(nfcTimeout);
     nfcTimeout = setTimeout(() => {
       if (nfcBuffer.trim().length > 0) {
         const captured = nfcBuffer.trim();
         nfcBuffer = '';
+        const inp = document.getElementById('nfc-capture-input');
+        if (inp) inp.value = '';
         processNFCScan(captured);
       }
     }, NFC_TIMEOUT_MS);
   }
 });
 
-// También escuchar el input oculto (para compatibilidad con algunos readers
-// que usan el DOM directamente en vez de eventos de teclado)
+// Input event listener — handles readers that write directly to DOM input
 document.addEventListener('DOMContentLoaded', () => {
   const nfcInput = document.getElementById('nfc-capture-input');
   if (nfcInput) {
-    nfcInput.addEventListener('input', function(e) {
+    nfcInput.addEventListener('input', function() {
       if (!nfcScannerActive) return;
       const val = this.value.trim().toUpperCase();
       if (!val) return;
-      this.value = ''; // limpiar para próximo scan
       clearTimeout(nfcTimeout);
       nfcTimeout = setTimeout(() => {
-        processNFCScan(val);
+        const captured = this.value.trim().toUpperCase();
+        this.value = '';
+        if (captured) processNFCScan(captured);
       }, NFC_TIMEOUT_MS);
     });
 
-    // Recuperar foco cuando se pierde (click en otro elemento)
+    // Keep focus on NFC input when scanner is active
+    // (except when user intentionally clicks manual search)
     document.addEventListener('click', function(e) {
-      if (nfcScannerActive && e.target.id !== 'manual-asset-id' && e.target.id !== 'search-asset-btn') {
-        setTimeout(focusNFCInput, 100);
+      if (!nfcScannerActive) return;
+      const safeTargets = ['manual-asset-id', 'search-asset-btn', 'nfc-activate-btn', 'back-from-scanner'];
+      if (!safeTargets.includes(e.target.id)) {
+        setTimeout(focusNFCInput, 80);
       }
     });
+  }
+
+  // Wire up activation button
+  const activateBtn = document.getElementById('nfc-activate-btn');
+  if (activateBtn) {
+    activateBtn.addEventListener('click', activateNFCScanner);
   }
 });
 
@@ -628,7 +679,10 @@ function setNFCStatus(state, label) {
   // Reset clases
   icon.classList.remove('nfc-active', 'nfc-success', 'nfc-error-glow');
 
-  if (state === 'active') {
+  if (state === 'inactive') {
+    icon.classList.add('nfc-active');
+    status.innerHTML = `<div class="w-2 h-2 rounded-full bg-gray-500"></div><span class="text-gray-400 text-sm font-medium">Scanner inactivo — presiona Activar</span>`;
+  } else if (state === 'active') {
     icon.classList.add('nfc-active');
     status.innerHTML = `<div class="w-2 h-2 rounded-full bg-gold blink"></div><span class="text-gold text-sm font-medium">Esperando sticker NFC...</span>`;
   } else if (state === 'scanning') {
@@ -737,8 +791,10 @@ function showView(view) {
 
   // NFC engine management
   if (view === 'scanner') {
-    startNFCEngine();
-    setNFCStatus('active');
+    // Reset scanner UI — user must click "Activar" button (required by browser HTTPS policy)
+    document.getElementById('nfc-activate-btn').classList.remove('hidden');
+    document.getElementById('nfc-input-wrapper').classList.add('hidden');
+    setNFCStatus('inactive');
   } else {
     stopNFCEngine();
   }
