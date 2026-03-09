@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Auroactivos - Gestión de Activos</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
@@ -40,19 +41,21 @@
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     .slide-up { animation: slideUp 0.4s ease-out; }
     @keyframes slideUp { from { opacity: 0; transform: translateY(100%); } to { opacity: 1; transform: translateY(0); } }
-    /* NFC Pulse Ring Animation */
-    .nfc-ring { animation: nfcPulse 1.8s ease-in-out infinite; }
-    .nfc-ring-2 { animation: nfcPulse 1.8s ease-in-out 0.4s infinite; }
-    .nfc-ring-3 { animation: nfcPulse 1.8s ease-in-out 0.8s infinite; }
-    @keyframes nfcPulse {
-      0% { transform: scale(0.8); opacity: 0.8; }
-      50% { transform: scale(1.2); opacity: 0.2; }
-      100% { transform: scale(1.5); opacity: 0; }
+    /* QR Scanner styles */
+    .qr-scan-line { animation: scanLine 2s linear infinite; }
+    @keyframes scanLine {
+      0%   { top: 4px; opacity: 1; }
+      100% { top: calc(100% - 4px); opacity: 0.3; }
     }
-    /* NFC Active Glow */
-    .nfc-active { box-shadow: 0 0 30px rgba(255, 215, 0, 0.4), 0 0 60px rgba(255, 215, 0, 0.15); }
-    .nfc-success { box-shadow: 0 0 30px rgba(34, 197, 94, 0.5), 0 0 60px rgba(34, 197, 94, 0.2); }
-    .nfc-error-glow { box-shadow: 0 0 30px rgba(239, 68, 68, 0.5), 0 0 60px rgba(239, 68, 68, 0.2); }
+    /* Scanner corner brackets */
+    .qr-corner { position: absolute; width: 24px; height: 24px; border-color: #FFD700; border-style: solid; }
+    .qr-corner-tl { top: 12px; left: 12px; border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
+    .qr-corner-tr { top: 12px; right: 12px; border-width: 3px 3px 0 0; border-radius: 0 4px 0 0; }
+    .qr-corner-bl { bottom: 12px; left: 12px; border-width: 0 0 3px 3px; border-radius: 0 0 0 4px; }
+    .qr-corner-br { bottom: 12px; right: 12px; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
+    /* QR success flash */
+    .qr-success-flash { animation: successFlash 0.4s ease-out; }
+    @keyframes successFlash { 0% { background: rgba(34,197,94,0.3); } 100% { background: transparent; } }
     /* Scan line animation */
     .scan-line { animation: scanLine 2s linear infinite; }
     @keyframes scanLine {
@@ -357,59 +360,64 @@
           Volver
         </button>
 
-        <h2 class="text-2xl font-display font-bold gold-text text-center">Escanear Activo NFC</h2>
+        <h2 class="text-2xl font-display font-bold gold-text text-center">Escanear QR</h2>
 
-        <!-- NFC Visual Zone -->
-        <div class="glass-card rounded-2xl p-6">
-          <div id="nfc-zone" class="relative flex flex-col items-center justify-center py-6 gap-5">
+        <!-- QR Camera Zone -->
+        <div class="glass-card rounded-2xl overflow-hidden">
+          <!-- Camera feed -->
+          <div id="qr-camera-container" class="relative w-full bg-black" style="aspect-ratio:1/1;">
+            <video id="qr-video" class="w-full h-full object-cover" playsinline muted></video>
+            <canvas id="qr-canvas" class="hidden"></canvas>
 
-            <!-- Animated NFC rings -->
-            <div class="relative flex items-center justify-center w-40 h-40">
-              <div id="nfc-ring-1" class="nfc-ring absolute w-40 h-40 rounded-full border-2 border-gold/30"></div>
-              <div id="nfc-ring-2" class="nfc-ring-2 absolute w-32 h-32 rounded-full border-2 border-gold/40"></div>
-              <div id="nfc-ring-3" class="nfc-ring-3 absolute w-24 h-24 rounded-full border-2 border-gold/50"></div>
-              <!-- NFC Icon Center -->
-              <div id="nfc-icon-center" class="w-20 h-20 rounded-2xl gold-gradient flex items-center justify-center shadow-lg nfc-active transition-all duration-500">
-                <svg class="w-10 h-10 text-oxford-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"/>
+            <!-- Corner brackets overlay -->
+            <div class="absolute inset-0 pointer-events-none">
+              <div class="qr-corner qr-corner-tl"></div>
+              <div class="qr-corner qr-corner-tr"></div>
+              <div class="qr-corner qr-corner-bl"></div>
+              <div class="qr-corner qr-corner-br"></div>
+              <!-- Scan line -->
+              <div id="qr-scan-line" class="qr-scan-line absolute left-3 right-3 h-0.5 bg-gold/70 shadow-lg hidden" style="top:4px;"></div>
+            </div>
+
+            <!-- Placeholder when camera is off -->
+            <div id="qr-placeholder" class="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-oxford-dark">
+              <div class="w-24 h-24 rounded-2xl bg-gold/10 border-2 border-dashed border-gold/30 flex items-center justify-center">
+                <svg class="w-12 h-12 text-gold/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
                 </svg>
               </div>
+              <p class="text-gray-400 text-sm">Cámara inactiva</p>
             </div>
 
-            <!-- Status indicator -->
-            <div id="nfc-status" class="flex items-center gap-2">
-              <div class="w-2 h-2 rounded-full bg-gray-500"></div>
-              <span class="text-gray-400 text-sm font-medium">Scanner inactivo</span>
+            <!-- Status overlay -->
+            <div id="qr-status-overlay" class="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent hidden">
+              <p id="qr-status-text" class="text-white text-sm text-center font-medium"></p>
             </div>
+          </div>
 
-            <!-- ACTIVATION BUTTON — required for browser focus policy on HTTPS -->
-            <button id="nfc-activate-btn"
+          <!-- Controls -->
+          <div class="p-4 space-y-3">
+            <div id="qr-status-bar" class="flex items-center gap-2 justify-center">
+              <div id="qr-status-dot" class="w-2 h-2 rounded-full bg-gray-500"></div>
+              <span id="qr-status-label" class="text-gray-400 text-sm">Cámara inactiva</span>
+            </div>
+            <button id="qr-start-btn"
               class="w-full py-4 gold-gradient text-oxford-dark font-bold rounded-xl hover:shadow-lg hover:shadow-gold/30 transition-all active:scale-[0.98] flex items-center justify-center gap-3 text-base">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
               </svg>
-              Activar Scanner NFC
+              Abrir Cámara
             </button>
-
-            <!-- The visible (but styled) input that actually receives NFC data -->
-            <div id="nfc-input-wrapper" class="w-full hidden">
-              <p class="text-xs text-gray-500 text-center mb-2">✅ Scanner activo — acerca el sticker NFC ahora</p>
-              <input
-                type="text"
-                id="nfc-capture-input"
-                placeholder="Esperando datos NFC..."
-                class="w-full px-4 py-3 bg-oxford-dark border-2 border-gold/50 rounded-xl text-white text-center placeholder-gray-600 focus:outline-none focus:border-gold transition-all font-mono tracking-widest"
-                autocomplete="off"
-                autocorrect="off"
-                autocapitalize="characters"
-                spellcheck="false"
-              >
-              <p class="text-xs text-gray-600 text-center mt-2">El campo se llenará solo al escanear</p>
-            </div>
+            <button id="qr-stop-btn"
+              class="hidden w-full py-3 bg-red-900/40 border border-red-500/30 text-red-400 font-medium rounded-xl hover:bg-red-900/60 transition-all active:scale-[0.98] flex items-center justify-center gap-2 text-sm">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/></svg>
+              Detener Cámara
+            </button>
           </div>
         </div>
 
-        <!-- Last scanned history -->
+        <!-- Scan history -->
         <div id="scan-history-section" class="glass-card rounded-2xl p-5 hidden">
           <h3 class="text-sm font-semibold text-gray-400 mb-3 flex items-center gap-2">
             <svg class="w-4 h-4 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -418,13 +426,12 @@
           <div id="scan-history-list" class="space-y-2"></div>
         </div>
 
-        <!-- Manual Search fallback -->
+        <!-- Manual Search -->
         <div class="glass-card rounded-2xl p-5">
-          <h3 class="text-base font-semibold text-white mb-4 flex items-center gap-2">
-            <svg class="w-5 h-5 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+          <h3 class="text-base font-semibold text-white mb-3 flex items-center gap-2">
+            <svg class="w-5 h-5 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
             Búsqueda Manual
           </h3>
-          <p class="text-xs text-gray-500 mb-3">Si el NFC no responde, ingresa el ID manualmente:</p>
           <div class="flex gap-3">
             <input type="text" id="manual-asset-id" placeholder="Ej: ACT0001"
               class="flex-1 px-4 py-3.5 bg-oxford-dark border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold transition-all uppercase"
@@ -449,10 +456,10 @@
         <button id="nav-scan" class="flex flex-col items-center gap-1 p-2 -mt-6">
           <div class="w-16 h-16 gold-gradient rounded-2xl flex items-center justify-center shadow-lg shadow-gold/30 hover:shadow-gold/50 transition-all active:scale-95">
             <svg class="w-8 h-8 text-oxford-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
             </svg>
           </div>
-          <span class="text-xs font-medium text-gray-400">NFC</span>
+          <span class="text-xs font-medium text-gray-400">Escanear QR</span>
         </button>
         <button id="nav-assets" class="flex flex-col items-center gap-1 p-2 text-gray-500">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
@@ -510,191 +517,176 @@ let assetToDelete = null;
 let scanHistory = [];           // últimos escaneos NFC en sesión
 
 // ============================================================
-//  NFC SCANNER ENGINE
-//  Los readers NFC USB/Bluetooth se comportan como teclados.
-//  Envían el ID carácter a carácter y terminan con Enter.
-//  Esta implementación captura keydown globalmente cuando la
-//  vista scanner está activa, NO depende de foco en un input.
+//  QR SCANNER ENGINE — uses jsQR + getUserMedia camera API
+//  Works on Android, iPhone (Safari), and desktop browsers.
 // ============================================================
-let nfcBuffer = '';
-let nfcTimeout = null;
-const NFC_TIMEOUT_MS = 150;   // ms entre chars antes de considerar el scan completo
-let nfcScannerActive = false;
+let qrVideoStream = null;
+let qrAnimFrame = null;
+let qrScannerActive = false;
+let qrLastScan = '';
+let qrLastScanTime = 0;
+const QR_DEBOUNCE_MS = 2000; // evitar escaneos dobles del mismo QR
 
-function startNFCEngine() {
-  nfcScannerActive = true;
-  nfcBuffer = '';
-  focusNFCInput();
-}
-
-function stopNFCEngine() {
-  nfcScannerActive = false;
-  nfcBuffer = '';
-  clearTimeout(nfcTimeout);
+function stopQREngine() {
+  qrScannerActive = false;
+  cancelAnimationFrame(qrAnimFrame);
+  if (qrVideoStream) {
+    qrVideoStream.getTracks().forEach(t => t.stop());
+    qrVideoStream = null;
+  }
+  const video = document.getElementById('qr-video');
+  if (video) video.srcObject = null;
   // Reset UI
-  const btn = document.getElementById('nfc-activate-btn');
-  const wrapper = document.getElementById('nfc-input-wrapper');
-  if (btn) btn.classList.remove('hidden');
-  if (wrapper) wrapper.classList.add('hidden');
+  document.getElementById('qr-placeholder').classList.remove('hidden');
+  document.getElementById('qr-scan-line').classList.add('hidden');
+  document.getElementById('qr-status-overlay').classList.add('hidden');
+  document.getElementById('qr-start-btn').classList.remove('hidden');
+  document.getElementById('qr-stop-btn').classList.add('hidden');
+  setQRStatus('idle');
 }
 
-function focusNFCInput() {
-  if (!nfcScannerActive) return;
-  const inp = document.getElementById('nfc-capture-input');
-  if (inp) {
-    inp.focus();
-    inp.select();
-  }
-}
+async function startQREngine() {
+  try {
+    setQRStatus('starting');
+    // Pedir cámara trasera con fallback a cualquier cámara
+    const constraints = {
+      video: {
+        facingMode: { ideal: 'environment' },
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
+      }
+    };
+    qrVideoStream = await navigator.mediaDevices.getUserMedia(constraints);
 
-function activateNFCScanner() {
-  // Show/hide UI elements
-  document.getElementById('nfc-activate-btn').classList.add('hidden');
-  document.getElementById('nfc-input-wrapper').classList.remove('hidden');
-  setNFCStatus('active');
+    const video = document.getElementById('qr-video');
+    video.srcObject = qrVideoStream;
+    await video.play();
 
-  // Start engine — must happen inside a user gesture (click) for HTTPS
-  nfcScannerActive = true;
-  nfcBuffer = '';
+    // Show camera UI
+    document.getElementById('qr-placeholder').classList.add('hidden');
+    document.getElementById('qr-scan-line').classList.remove('hidden');
+    document.getElementById('qr-status-overlay').classList.remove('hidden');
+    document.getElementById('qr-start-btn').classList.add('hidden');
+    document.getElementById('qr-stop-btn').classList.remove('hidden');
 
-  // Focus the visible input immediately (allowed because we're inside a click handler)
-  const inp = document.getElementById('nfc-capture-input');
-  if (inp) {
-    inp.value = '';
-    inp.focus();
-  }
-}
+    qrScannerActive = true;
+    setQRStatus('scanning');
+    scanQRFrame();
 
-// Captura global de teclado — actúa como scanner HID listener
-document.addEventListener('keydown', function(e) {
-  if (!nfcScannerActive) return;
-  // Don't intercept if user is typing in manual search input
-  if (document.activeElement && document.activeElement.id === 'manual-asset-id') return;
-
-  if (e.key === 'Enter') {
-    e.preventDefault();
-    if (nfcBuffer.trim().length > 0) {
-      const captured = nfcBuffer.trim();
-      nfcBuffer = '';
-      clearTimeout(nfcTimeout);
-      // Clear the visible input
-      const inp = document.getElementById('nfc-capture-input');
-      if (inp) inp.value = '';
-      processNFCScan(captured);
+  } catch (err) {
+    if (err.name === 'NotAllowedError') {
+      showToast('Permiso de cámara denegado. Actívalo en ajustes del navegador.', 'error');
+    } else if (err.name === 'NotFoundError') {
+      showToast('No se encontró cámara en este dispositivo', 'error');
+    } else {
+      showToast('Error al abrir la cámara: ' + err.message, 'error');
     }
+    setQRStatus('idle');
+  }
+}
+
+function scanQRFrame() {
+  if (!qrScannerActive) return;
+
+  const video = document.getElementById('qr-video');
+  const canvas = document.getElementById('qr-canvas');
+
+  if (video.readyState === video.HAVE_ENOUGH_DATA) {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+    const code = jsQR(imageData.data, imageData.width, imageData.height, {
+      inversionAttempts: 'dontInvert'
+    });
+
+    if (code && code.data) {
+      const now = Date.now();
+      // Debounce: ignorar mismo QR dentro de 2 segundos
+      if (code.data !== qrLastScan || now - qrLastScanTime > QR_DEBOUNCE_MS) {
+        qrLastScan = code.data;
+        qrLastScanTime = now;
+        processQRScan(code.data);
+        // Pausa breve antes de continuar escaneando
+        setTimeout(() => {
+          if (qrScannerActive) qrAnimFrame = requestAnimationFrame(scanQRFrame);
+        }, 800);
+        return;
+      }
+    }
+  }
+
+  qrAnimFrame = requestAnimationFrame(scanQRFrame);
+}
+
+function processQRScan(rawData) {
+  const scannedId = sanitizeID(rawData.toUpperCase());
+  if (!scannedId) {
+    showToast('QR sin ID válido', 'error');
     return;
   }
 
-  if (e.key.length === 1) {
-    nfcBuffer += e.key.toUpperCase();
-    clearTimeout(nfcTimeout);
-    nfcTimeout = setTimeout(() => {
-      if (nfcBuffer.trim().length > 0) {
-        const captured = nfcBuffer.trim();
-        nfcBuffer = '';
-        const inp = document.getElementById('nfc-capture-input');
-        if (inp) inp.value = '';
-        processNFCScan(captured);
-      }
-    }, NFC_TIMEOUT_MS);
-  }
-});
-
-// Input event listener — handles readers that write directly to DOM input
-document.addEventListener('DOMContentLoaded', () => {
-  const nfcInput = document.getElementById('nfc-capture-input');
-  if (nfcInput) {
-    nfcInput.addEventListener('input', function() {
-      if (!nfcScannerActive) return;
-      const val = this.value.trim().toUpperCase();
-      if (!val) return;
-      clearTimeout(nfcTimeout);
-      nfcTimeout = setTimeout(() => {
-        const captured = this.value.trim().toUpperCase();
-        this.value = '';
-        if (captured) processNFCScan(captured);
-      }, NFC_TIMEOUT_MS);
-    });
-
-    // Keep focus on NFC input when scanner is active
-    // (except when user intentionally clicks manual search)
-    document.addEventListener('click', function(e) {
-      if (!nfcScannerActive) return;
-      const safeTargets = ['manual-asset-id', 'search-asset-btn', 'nfc-activate-btn', 'back-from-scanner'];
-      if (!safeTargets.includes(e.target.id)) {
-        setTimeout(focusNFCInput, 80);
-      }
-    });
-  }
-
-  // Wire up activation button
-  const activateBtn = document.getElementById('nfc-activate-btn');
-  if (activateBtn) {
-    activateBtn.addEventListener('click', activateNFCScanner);
-  }
-});
-
-function sanitizeID(raw) {
-  // Eliminar cualquier carácter que no sea letra o número
-  return raw.replace(/[^A-Z0-9]/g, '').trim();
-}
-
-function processNFCScan(rawData) {
-  const scannedId = sanitizeID(rawData.toUpperCase());
-  if (!scannedId) return;
-
-  // Visual feedback
-  setNFCStatus('scanning', scannedId);
-
+  setQRStatus('found', scannedId);
   const asset = allAssets.find(a => sanitizeID(a.id.toUpperCase()) === scannedId);
 
   if (asset) {
-    // SUCCESS
     addScanHistory(scannedId, asset.nombre, true);
-    setNFCStatus('success', asset.nombre);
     showToast(`✓ ${asset.nombre}`, 'success');
+    // Flash verde en la cámara
+    const overlay = document.getElementById('qr-status-overlay');
+    overlay.classList.add('qr-success-flash');
+    setTimeout(() => overlay.classList.remove('qr-success-flash'), 400);
     setTimeout(() => {
-      stopNFCEngine();
+      stopQREngine();
       viewAssetDetail(asset.id);
     }, 600);
   } else {
-    // NOT FOUND
     addScanHistory(scannedId, null, false);
-    setNFCStatus('error', scannedId);
-    document.getElementById('scanner-error').textContent = `ID "${scannedId}" no encontrado en el sistema`;
+    document.getElementById('scanner-error').textContent = `ID "${scannedId}" no encontrado`;
     document.getElementById('scanner-error').classList.remove('hidden');
-    showToast(`ID no registrado: ${scannedId}`, 'error');
-    // Volver a estado activo tras 2s
+    showToast(`No registrado: ${scannedId}`, 'error');
+    setQRStatus('scanning');
     setTimeout(() => {
-      setNFCStatus('active');
       document.getElementById('scanner-error').classList.add('hidden');
     }, 2500);
   }
 }
 
-function setNFCStatus(state, label) {
-  const icon = document.getElementById('nfc-icon-center');
-  const status = document.getElementById('nfc-status');
+function setQRStatus(state, label) {
+  const dot = document.getElementById('qr-status-dot');
+  const lbl = document.getElementById('qr-status-label');
+  const statusText = document.getElementById('qr-status-text');
 
-  // Reset clases
-  icon.classList.remove('nfc-active', 'nfc-success', 'nfc-error-glow');
-
-  if (state === 'inactive') {
-    icon.classList.add('nfc-active');
-    status.innerHTML = `<div class="w-2 h-2 rounded-full bg-gray-500"></div><span class="text-gray-400 text-sm font-medium">Scanner inactivo — presiona Activar</span>`;
-  } else if (state === 'active') {
-    icon.classList.add('nfc-active');
-    status.innerHTML = `<div class="w-2 h-2 rounded-full bg-gold blink"></div><span class="text-gold text-sm font-medium">Esperando sticker NFC...</span>`;
+  if (state === 'idle') {
+    dot.className = 'w-2 h-2 rounded-full bg-gray-500';
+    lbl.textContent = 'Cámara inactiva';
+    if (statusText) statusText.textContent = '';
+  } else if (state === 'starting') {
+    dot.className = 'w-2 h-2 rounded-full bg-yellow-400 blink';
+    lbl.textContent = 'Iniciando cámara...';
   } else if (state === 'scanning') {
-    icon.classList.add('nfc-active');
-    status.innerHTML = `<div class="w-2 h-2 rounded-full bg-yellow-400 blink"></div><span class="text-yellow-400 text-sm font-medium">Leyendo: ${label}</span>`;
-  } else if (state === 'success') {
-    icon.classList.add('nfc-success');
-    status.innerHTML = `<div class="w-2 h-2 rounded-full bg-green-400"></div><span class="text-green-400 text-sm font-medium">✓ ${label}</span>`;
-  } else if (state === 'error') {
-    icon.classList.add('nfc-error-glow');
-    status.innerHTML = `<div class="w-2 h-2 rounded-full bg-red-400"></div><span class="text-red-400 text-sm font-medium">No encontrado: ${label}</span>`;
+    dot.className = 'w-2 h-2 rounded-full bg-gold blink';
+    lbl.textContent = 'Escaneando QR...';
+    if (statusText) statusText.textContent = 'Apunta al código QR del activo';
+  } else if (state === 'found') {
+    dot.className = 'w-2 h-2 rounded-full bg-green-400';
+    lbl.textContent = `Detectado: ${label}`;
+    if (statusText) statusText.textContent = `✓ QR leído: ${label}`;
   }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  // QR start/stop buttons
+  const startBtn = document.getElementById('qr-start-btn');
+  const stopBtn = document.getElementById('qr-stop-btn');
+  if (startBtn) startBtn.addEventListener('click', startQREngine);
+  if (stopBtn) stopBtn.addEventListener('click', stopQREngine);
+});
+
+function sanitizeID(raw) {
+  return raw.replace(/[^A-Z0-9]/g, '').trim();
 }
 
 function addScanHistory(id, name, success) {
@@ -768,7 +760,7 @@ function handleLogin() {
 
 function handleLogout() {
   isAuthenticated = false; currentUser = null;
-  stopNFCEngine();
+  stopQREngine();
   document.getElementById('main-app').classList.add('hidden');
   document.getElementById('login-screen').classList.remove('hidden');
   document.getElementById('login-user').value = '';
@@ -789,14 +781,9 @@ function showView(view) {
   document.getElementById('nav-dashboard').className = `flex flex-col items-center gap-1 p-2 ${view === 'dashboard' ? 'text-gold' : 'text-gray-500'}`;
   document.getElementById('nav-assets').className = `flex flex-col items-center gap-1 p-2 ${(view === 'asset-detail' || view === 'asset-form') ? 'text-gold' : 'text-gray-500'}`;
 
-  // NFC engine management
-  if (view === 'scanner') {
-    // Reset scanner UI — user must click "Activar" button (required by browser HTTPS policy)
-    document.getElementById('nfc-activate-btn').classList.remove('hidden');
-    document.getElementById('nfc-input-wrapper').classList.add('hidden');
-    setNFCStatus('inactive');
-  } else {
-    stopNFCEngine();
+  // QR engine management
+  if (view !== 'scanner') {
+    stopQREngine();
   }
 }
 
@@ -1194,7 +1181,7 @@ function searchAssetByManualId() {
     document.getElementById('scanner-error').classList.remove('hidden');
     return;
   }
-  processNFCScan(val);
+  processQRScan(val);
   document.getElementById('manual-asset-id').value = '';
 }
 
@@ -1242,7 +1229,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('back-to-dashboard').addEventListener('click', () => showView('dashboard'));
   document.getElementById('back-from-form').addEventListener('click', () => showView('dashboard'));
   document.getElementById('back-from-scanner').addEventListener('click', () => {
-    stopNFCEngine();
+    stopQREngine();
     showView('dashboard');
   });
 
@@ -1254,11 +1241,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('search-asset-btn').addEventListener('click', searchAssetByManualId);
   document.getElementById('manual-asset-id').addEventListener('keypress', e => {
     if (e.key === 'Enter') searchAssetByManualId();
-  });
-  // When user clicks on manual input, pause the global NFC listener briefly
-  document.getElementById('manual-asset-id').addEventListener('focus', () => { nfcScannerActive = false; });
-  document.getElementById('manual-asset-id').addEventListener('blur', () => {
-    if (currentView === 'scanner') nfcScannerActive = true;
   });
 
   // Search filter
