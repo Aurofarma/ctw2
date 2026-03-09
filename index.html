@@ -1,0 +1,1224 @@
+<!doctype html>
+<html lang="es" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Auroactivos - Gestión de Activos</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'oxford': '#1a1f2e',
+            'oxford-light': '#252b3d',
+            'oxford-dark': '#0f1219',
+            'gold': '#FFD700',
+            'gold-dark': '#B8860B',
+            'gold-light': '#FFE55C',
+            'surface': '#1e2433',
+            'surface-light': '#2a3144'
+          },
+          fontFamily: {
+            'display': ['Playfair Display', 'serif'],
+            'body': ['Inter', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    html, body { height: 100%; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; }
+    .gold-gradient { background: linear-gradient(135deg, #FFD700 0%, #B8860B 100%); }
+    .gold-text { background: linear-gradient(135deg, #FFD700 0%, #FFE55C 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .glass-card { background: rgba(30, 36, 51, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(255, 215, 0, 0.1); }
+    .fade-in { animation: fadeIn 0.3s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .slide-up { animation: slideUp 0.4s ease-out; }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(100%); } to { opacity: 1; transform: translateY(0); } }
+    /* NFC Pulse Ring Animation */
+    .nfc-ring { animation: nfcPulse 1.8s ease-in-out infinite; }
+    .nfc-ring-2 { animation: nfcPulse 1.8s ease-in-out 0.4s infinite; }
+    .nfc-ring-3 { animation: nfcPulse 1.8s ease-in-out 0.8s infinite; }
+    @keyframes nfcPulse {
+      0% { transform: scale(0.8); opacity: 0.8; }
+      50% { transform: scale(1.2); opacity: 0.2; }
+      100% { transform: scale(1.5); opacity: 0; }
+    }
+    /* NFC Active Glow */
+    .nfc-active { box-shadow: 0 0 30px rgba(255, 215, 0, 0.4), 0 0 60px rgba(255, 215, 0, 0.15); }
+    .nfc-success { box-shadow: 0 0 30px rgba(34, 197, 94, 0.5), 0 0 60px rgba(34, 197, 94, 0.2); }
+    .nfc-error-glow { box-shadow: 0 0 30px rgba(239, 68, 68, 0.5), 0 0 60px rgba(239, 68, 68, 0.2); }
+    /* Scan line animation */
+    .scan-line { animation: scanLine 2s linear infinite; }
+    @keyframes scanLine {
+      0% { top: 0%; opacity: 1; }
+      100% { top: 100%; opacity: 0; }
+    }
+    /* Status badge blink */
+    .blink { animation: blink 1s ease-in-out infinite; }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+    input[type="text"], input[type="password"], input[type="number"], input[type="date"] {
+      -webkit-appearance: none; appearance: none;
+    }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #1a1f2e; }
+    ::-webkit-scrollbar-thumb { background: #3a4156; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #4a5166; }
+    /* Estado badges */
+    .badge-activo { background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.3); }
+    .badge-mantenimiento { background: rgba(251,191,36,0.15); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
+    .badge-baja { background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+    .badge-extraviado { background: rgba(168,85,247,0.15); color: #c084fc; border: 1px solid rgba(168,85,247,0.3); }
+  </style>
+</head>
+<body class="h-full bg-oxford-dark text-gray-100 overflow-auto">
+<div id="app" class="h-full w-full flex flex-col">
+
+  <!-- ==================== LOGIN SCREEN ==================== -->
+  <div id="login-screen" class="h-full w-full flex flex-col items-center justify-center p-6 bg-gradient-to-br from-oxford-dark via-oxford to-oxford-dark">
+    <div class="w-full max-w-md fade-in">
+      <div class="text-center mb-10">
+        <div class="inline-flex items-center justify-center w-20 h-20 rounded-2xl gold-gradient mb-4 shadow-lg shadow-gold/20">
+          <svg class="w-10 h-10 text-oxford-dark" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        </div>
+        <h1 class="font-display text-4xl font-bold gold-text mb-2">Auroactivos</h1>
+        <p class="text-gray-400 text-sm">Sistema de Gestión de Activos</p>
+      </div>
+      <div class="glass-card rounded-2xl p-8">
+        <div class="space-y-5">
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">Usuario</label>
+            <input type="text" id="login-user" placeholder="Ingrese su usuario"
+              class="w-full px-4 py-3.5 bg-oxford-dark border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-all">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">Contraseña</label>
+            <input type="password" id="login-pass" placeholder="••••••••"
+              class="w-full px-4 py-3.5 bg-oxford-dark border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold transition-all">
+          </div>
+          <div id="login-error" class="hidden text-red-400 text-sm text-center py-2 bg-red-900/20 rounded-lg"></div>
+          <button id="login-btn" class="w-full py-4 gold-gradient text-oxford-dark font-semibold rounded-xl hover:shadow-lg hover:shadow-gold/30 transition-all active:scale-[0.98] text-lg">
+            Iniciar Sesión
+          </button>
+        </div>
+        <p class="text-center text-gray-500 text-xs mt-6">Demo: admin / admin123</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MAIN APP ==================== -->
+  <div id="main-app" class="hidden h-full w-full flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-surface border-b border-gray-800 px-4 py-3 flex items-center justify-between sticky top-0 z-40">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl gold-gradient flex items-center justify-center">
+          <svg class="w-5 h-5 text-oxford-dark" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        </div>
+        <div>
+          <h1 class="font-display text-xl font-bold gold-text">Auroactivos</h1>
+          <p class="text-xs text-gray-500">Gestión de Activos Fijos</p>
+        </div>
+      </div>
+      <button id="logout-btn" class="p-2 rounded-lg hover:bg-oxford-light transition-colors" title="Cerrar Sesión">
+        <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+        </svg>
+      </button>
+    </header>
+
+    <!-- Content Area -->
+    <main class="flex-1 overflow-auto p-4 pb-28">
+
+      <!-- ===== DASHBOARD VIEW ===== -->
+      <div id="dashboard-view" class="space-y-6 fade-in">
+
+        <!-- Alert Banner: activos críticos -->
+        <div id="alert-banner" class="hidden glass-card rounded-xl p-3 border border-red-500/30 bg-red-900/10">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center shrink-0">
+              <svg class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+              </svg>
+            </div>
+            <p id="alert-banner-text" class="text-red-400 text-sm font-medium"></p>
+          </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-2 gap-3">
+          <div class="glass-card rounded-2xl p-4">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-10 h-10 rounded-xl bg-gold/20 flex items-center justify-center">
+                <svg class="w-5 h-5 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+              </div>
+              <span class="text-gray-400 text-sm">Total Activos</span>
+            </div>
+            <p class="text-3xl font-bold text-white" id="stat-total-assets">0</p>
+          </div>
+          <div class="glass-card rounded-2xl p-4">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center">
+                <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              </div>
+              <span class="text-gray-400 text-sm">Valor Total</span>
+            </div>
+            <p class="text-2xl font-bold text-white" id="stat-total-value">$0</p>
+          </div>
+          <div class="glass-card rounded-2xl p-4">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center">
+                <svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"/></svg>
+              </div>
+              <span class="text-gray-400 text-sm">Depreciación</span>
+            </div>
+            <p class="text-2xl font-bold text-white" id="stat-total-depreciation">$0</p>
+          </div>
+          <div class="glass-card rounded-2xl p-4">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+              </div>
+              <span class="text-gray-400 text-sm">Valor Contable</span>
+            </div>
+            <p class="text-2xl font-bold text-white" id="stat-book-value">$0</p>
+          </div>
+        </div>
+
+        <!-- Search & Add -->
+        <div class="glass-card rounded-2xl p-4">
+          <div class="flex gap-3">
+            <div class="flex-1 relative">
+              <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+              </svg>
+              <input type="text" id="search-input" placeholder="Buscar activo, encargado, ID..."
+                class="w-full pl-10 pr-4 py-3 bg-oxford-dark border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold transition-all">
+            </div>
+            <button id="add-asset-btn" class="px-4 py-3 gold-gradient rounded-xl flex items-center gap-2 hover:shadow-lg hover:shadow-gold/30 transition-all active:scale-[0.98]">
+              <svg class="w-5 h-5 text-oxford-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            </button>
+          </div>
+          <!-- Filter chips -->
+          <div class="flex gap-2 mt-3 overflow-x-auto pb-1">
+            <button onclick="filterByStatus('todos')" data-filter="todos" class="filter-chip px-3 py-1.5 rounded-lg text-xs font-medium bg-gold/20 text-gold border border-gold/30 shrink-0 transition-all">Todos</button>
+            <button onclick="filterByStatus('activo')" data-filter="activo" class="filter-chip px-3 py-1.5 rounded-lg text-xs font-medium bg-oxford-dark text-gray-400 border border-gray-700 shrink-0 transition-all">✅ Activos</button>
+            <button onclick="filterByStatus('mantenimiento')" data-filter="mantenimiento" class="filter-chip px-3 py-1.5 rounded-lg text-xs font-medium bg-oxford-dark text-gray-400 border border-gray-700 shrink-0 transition-all">🔧 Mantenimiento</button>
+            <button onclick="filterByStatus('baja')" data-filter="baja" class="filter-chip px-3 py-1.5 rounded-lg text-xs font-medium bg-oxford-dark text-gray-400 border border-gray-700 shrink-0 transition-all">🚫 Baja</button>
+            <button onclick="filterByStatus('extraviado')" data-filter="extraviado" class="filter-chip px-3 py-1.5 rounded-lg text-xs font-medium bg-oxford-dark text-gray-400 border border-gray-700 shrink-0 transition-all">❓ Extraviado</button>
+          </div>
+        </div>
+
+        <!-- Assets List -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-white flex items-center gap-2">
+              <svg class="w-5 h-5 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+              Lista de Activos
+            </h3>
+            <span id="asset-count-badge" class="text-xs text-gray-500 bg-oxford-dark px-2 py-1 rounded-lg">0 activos</span>
+          </div>
+          <div id="assets-list" class="space-y-3"></div>
+        </div>
+      </div>
+
+      <!-- ===== ASSET DETAIL VIEW ===== -->
+      <div id="asset-detail-view" class="hidden space-y-4 fade-in">
+        <button id="back-to-dashboard" class="flex items-center gap-2 text-gray-400 hover:text-gold transition-colors mb-4">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+          Volver al Dashboard
+        </button>
+        <div id="asset-detail-content"></div>
+      </div>
+
+      <!-- ===== ASSET FORM VIEW ===== -->
+      <div id="asset-form-view" class="hidden space-y-4 fade-in">
+        <button id="back-from-form" class="flex items-center gap-2 text-gray-400 hover:text-gold transition-colors mb-4">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+          Cancelar
+        </button>
+        <h2 class="text-2xl font-display font-bold gold-text" id="form-title">Nuevo Activo</h2>
+        <div class="glass-card rounded-2xl p-5 space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">ID del Activo * <span class="text-xs text-gray-500">(Formato: ACT0001)</span></label>
+            <input type="text" id="asset-id" placeholder="ACT0001"
+              class="w-full px-4 py-3 bg-oxford-dark border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold transition-all uppercase"
+              oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">Nombre del Activo *</label>
+            <input type="text" id="asset-name" placeholder="Computadora Dell XPS"
+              class="w-full px-4 py-3 bg-oxford-dark border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold transition-all">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">URL de Fotografía</label>
+            <input type="text" id="asset-photo" placeholder="https://..."
+              class="w-full px-4 py-3 bg-oxford-dark border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold transition-all">
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-2">Fecha Adquisición *</label>
+              <input type="date" id="asset-date"
+                class="w-full px-4 py-3 bg-oxford-dark border border-gray-700 rounded-xl text-white focus:outline-none focus:border-gold transition-all">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-2">Estado</label>
+              <select id="asset-status" class="w-full px-4 py-3 bg-oxford-dark border border-gray-700 rounded-xl text-white focus:outline-none focus:border-gold transition-all">
+                <option value="activo">✅ Activo</option>
+                <option value="mantenimiento">🔧 Mantenimiento</option>
+                <option value="baja">🚫 Baja</option>
+                <option value="extraviado">❓ Extraviado</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-2">Encargado *</label>
+              <input type="text" id="asset-manager" placeholder="Juan Pérez"
+                class="w-full px-4 py-3 bg-oxford-dark border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold transition-all">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-2">Ubicación</label>
+              <input type="text" id="asset-location" placeholder="Oficina Principal"
+                class="w-full px-4 py-3 bg-oxford-dark border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold transition-all">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-2">Costo Inicial ($) *</label>
+              <input type="number" id="asset-cost" placeholder="10000"
+                class="w-full px-4 py-3 bg-oxford-dark border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold transition-all">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-2">Valor Rescate ($)</label>
+              <input type="number" id="asset-salvage" placeholder="1000"
+                class="w-full px-4 py-3 bg-oxford-dark border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold transition-all">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-2">Vida Útil (años) *</label>
+              <input type="number" id="asset-life" placeholder="5"
+                class="w-full px-4 py-3 bg-oxford-dark border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold transition-all">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-2">Categoría</label>
+              <select id="asset-category" class="w-full px-4 py-3 bg-oxford-dark border border-gray-700 rounded-xl text-white focus:outline-none focus:border-gold transition-all">
+                <option value="equipos">💻 Equipos de Cómputo</option>
+                <option value="maquinaria">⚙️ Maquinaria</option>
+                <option value="vehiculos">🚗 Vehículos</option>
+                <option value="mobiliario">🪑 Mobiliario</option>
+                <option value="herramientas">🔧 Herramientas</option>
+                <option value="otros">📦 Otros</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-2">Número de Serie</label>
+              <input type="text" id="asset-serial" placeholder="SN-123456789"
+                class="w-full px-4 py-3 bg-oxford-dark border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold transition-all">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-2">Proveedor</label>
+              <input type="text" id="asset-supplier" placeholder="Dell México"
+                class="w-full px-4 py-3 bg-oxford-dark border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold transition-all">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-2">Garantía hasta</label>
+              <input type="date" id="asset-warranty"
+                class="w-full px-4 py-3 bg-oxford-dark border border-gray-700 rounded-xl text-white focus:outline-none focus:border-gold transition-all">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-2">Último mantenimiento</label>
+              <input type="date" id="asset-maintenance"
+                class="w-full px-4 py-3 bg-oxford-dark border border-gray-700 rounded-xl text-white focus:outline-none focus:border-gold transition-all">
+            </div>
+          </div>
+          <div id="form-error" class="hidden text-red-400 text-sm text-center py-2 bg-red-900/20 rounded-lg"></div>
+          <button id="save-asset-btn" class="w-full py-4 gold-gradient text-oxford-dark font-semibold rounded-xl hover:shadow-lg hover:shadow-gold/30 transition-all active:scale-[0.98] text-lg flex items-center justify-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            <span id="save-btn-text">Guardar Activo</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ===== SCANNER VIEW ===== -->
+      <div id="scanner-view" class="hidden space-y-4 fade-in">
+        <button id="back-from-scanner" class="flex items-center gap-2 text-gray-400 hover:text-gold transition-colors mb-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+          Volver
+        </button>
+
+        <h2 class="text-2xl font-display font-bold gold-text text-center">Escanear Activo NFC</h2>
+
+        <!-- NFC Visual Zone -->
+        <div class="glass-card rounded-2xl p-6">
+          <div id="nfc-zone" class="relative flex flex-col items-center justify-center py-10 gap-6">
+            <!-- Animated NFC rings -->
+            <div class="relative flex items-center justify-center w-40 h-40">
+              <div id="nfc-ring-1" class="nfc-ring absolute w-40 h-40 rounded-full border-2 border-gold/30"></div>
+              <div id="nfc-ring-2" class="nfc-ring-2 absolute w-32 h-32 rounded-full border-2 border-gold/40"></div>
+              <div id="nfc-ring-3" class="nfc-ring-3 absolute w-24 h-24 rounded-full border-2 border-gold/50"></div>
+              <!-- NFC Icon Center -->
+              <div id="nfc-icon-center" class="w-20 h-20 rounded-2xl gold-gradient flex items-center justify-center shadow-lg nfc-active transition-all duration-500">
+                <svg class="w-10 h-10 text-oxford-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"/>
+                </svg>
+              </div>
+            </div>
+            <!-- Status indicator -->
+            <div id="nfc-status" class="flex items-center gap-2">
+              <div class="w-2 h-2 rounded-full bg-gold blink"></div>
+              <span class="text-gold text-sm font-medium">Esperando sticker NFC...</span>
+            </div>
+            <p class="text-gray-500 text-xs text-center px-4">Acerca el sticker NFC al lector.<br>El sistema capturará el ID automáticamente.</p>
+          </div>
+
+          <!-- Hidden input that captures NFC data — keeps focus trap active -->
+          <input
+            type="text"
+            id="nfc-capture-input"
+            class="opacity-0 absolute w-0 h-0 pointer-events-none"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="off"
+            spellcheck="false"
+            aria-hidden="true"
+          >
+        </div>
+
+        <!-- Last scanned history -->
+        <div id="scan-history-section" class="glass-card rounded-2xl p-5 hidden">
+          <h3 class="text-sm font-semibold text-gray-400 mb-3 flex items-center gap-2">
+            <svg class="w-4 h-4 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            Últimos escaneos
+          </h3>
+          <div id="scan-history-list" class="space-y-2"></div>
+        </div>
+
+        <!-- Manual Search fallback -->
+        <div class="glass-card rounded-2xl p-5">
+          <h3 class="text-base font-semibold text-white mb-4 flex items-center gap-2">
+            <svg class="w-5 h-5 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+            Búsqueda Manual
+          </h3>
+          <p class="text-xs text-gray-500 mb-3">Si el NFC no responde, ingresa el ID manualmente:</p>
+          <div class="flex gap-3">
+            <input type="text" id="manual-asset-id" placeholder="Ej: ACT0001"
+              class="flex-1 px-4 py-3.5 bg-oxford-dark border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-gold transition-all uppercase"
+              oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')">
+            <button id="search-asset-btn" class="px-6 py-3.5 gold-gradient text-oxford-dark font-semibold rounded-xl hover:shadow-lg hover:shadow-gold/30 transition-all active:scale-[0.98]">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </button>
+          </div>
+          <div id="scanner-error" class="hidden text-red-400 text-sm text-center py-2 bg-red-900/20 rounded-lg mt-3"></div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-surface border-t border-gray-800 px-4 py-2 z-50">
+      <div class="flex items-center justify-around max-w-md mx-auto">
+        <button id="nav-dashboard" class="flex flex-col items-center gap-1 p-2 text-gold">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+          <span class="text-xs font-medium">Dashboard</span>
+        </button>
+        <button id="nav-scan" class="flex flex-col items-center gap-1 p-2 -mt-6">
+          <div class="w-16 h-16 gold-gradient rounded-2xl flex items-center justify-center shadow-lg shadow-gold/30 hover:shadow-gold/50 transition-all active:scale-95">
+            <svg class="w-8 h-8 text-oxford-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"/>
+            </svg>
+          </div>
+          <span class="text-xs font-medium text-gray-400">NFC</span>
+        </button>
+        <button id="nav-assets" class="flex flex-col items-center gap-1 p-2 text-gray-500">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+          <span class="text-xs font-medium">Activos</span>
+        </button>
+      </div>
+    </nav>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed top-4 right-4 left-4 z-50 hidden">
+    <div class="glass-card rounded-xl p-4 flex items-center gap-3 max-w-md mx-auto slide-up">
+      <div id="toast-icon" class="w-10 h-10 rounded-full flex items-center justify-center shrink-0"></div>
+      <div class="flex-1">
+        <p id="toast-message" class="text-white font-medium text-sm"></p>
+      </div>
+      <button id="toast-close" class="text-gray-400 hover:text-white">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div id="delete-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-black/70">
+    <div class="glass-card rounded-2xl p-6 max-w-sm w-full slide-up">
+      <div class="text-center">
+        <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-red-500/20 flex items-center justify-center">
+          <svg class="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+        </div>
+        <h3 class="text-xl font-semibold text-white mb-2">¿Eliminar Activo?</h3>
+        <p class="text-gray-400 text-sm mb-6" id="delete-asset-name">Esta acción no se puede deshacer.</p>
+        <div class="flex gap-3">
+          <button id="cancel-delete" class="flex-1 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl transition-colors">Cancelar</button>
+          <button id="confirm-delete" class="flex-1 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl transition-colors">Eliminar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ============================================================
+//  STATE
+// ============================================================
+let isAuthenticated = false;
+let currentUser = null;
+let allAssets = [];
+let filteredAssets = [];
+let currentFilter = 'todos';
+let currentView = 'dashboard';
+let currentAssetId = null;
+let editingAsset = null;
+let assetToDelete = null;
+let scanHistory = [];           // últimos escaneos NFC en sesión
+
+// ============================================================
+//  NFC SCANNER ENGINE
+//  Los readers NFC USB/Bluetooth se comportan como teclados.
+//  Envían el ID carácter a carácter y terminan con Enter.
+//  Esta implementación captura keydown globalmente cuando la
+//  vista scanner está activa, NO depende de foco en un input.
+// ============================================================
+let nfcBuffer = '';
+let nfcTimeout = null;
+const NFC_TIMEOUT_MS = 150;   // ms entre chars antes de considerar el scan completo
+let nfcScannerActive = false;
+
+function startNFCEngine() {
+  nfcScannerActive = true;
+  nfcBuffer = '';
+  // refocus helper: mantiene el input oculto activo para capturar datos
+  focusNFCInput();
+}
+
+function stopNFCEngine() {
+  nfcScannerActive = false;
+  nfcBuffer = '';
+  clearTimeout(nfcTimeout);
+}
+
+function focusNFCInput() {
+  if (!nfcScannerActive) return;
+  const inp = document.getElementById('nfc-capture-input');
+  if (inp) inp.focus();
+}
+
+// Captura global de teclado — actúa como scanner HID listener
+document.addEventListener('keydown', function(e) {
+  if (!nfcScannerActive) return;
+
+  // Enter = fin de transmisión NFC
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    if (nfcBuffer.trim().length > 0) {
+      const captured = nfcBuffer.trim();
+      nfcBuffer = '';
+      clearTimeout(nfcTimeout);
+      processNFCScan(captured);
+    }
+    return;
+  }
+
+  // Solo caracteres imprimibles (ignora Shift, Ctrl, etc.)
+  if (e.key.length === 1) {
+    nfcBuffer += e.key.toUpperCase();
+
+    // Reset timeout: si pasan 150ms sin nuevo char → procesar
+    clearTimeout(nfcTimeout);
+    nfcTimeout = setTimeout(() => {
+      if (nfcBuffer.trim().length > 0) {
+        const captured = nfcBuffer.trim();
+        nfcBuffer = '';
+        processNFCScan(captured);
+      }
+    }, NFC_TIMEOUT_MS);
+  }
+});
+
+// También escuchar el input oculto (para compatibilidad con algunos readers
+// que usan el DOM directamente en vez de eventos de teclado)
+document.addEventListener('DOMContentLoaded', () => {
+  const nfcInput = document.getElementById('nfc-capture-input');
+  if (nfcInput) {
+    nfcInput.addEventListener('input', function(e) {
+      if (!nfcScannerActive) return;
+      const val = this.value.trim().toUpperCase();
+      if (!val) return;
+      this.value = ''; // limpiar para próximo scan
+      clearTimeout(nfcTimeout);
+      nfcTimeout = setTimeout(() => {
+        processNFCScan(val);
+      }, NFC_TIMEOUT_MS);
+    });
+
+    // Recuperar foco cuando se pierde (click en otro elemento)
+    document.addEventListener('click', function(e) {
+      if (nfcScannerActive && e.target.id !== 'manual-asset-id' && e.target.id !== 'search-asset-btn') {
+        setTimeout(focusNFCInput, 100);
+      }
+    });
+  }
+});
+
+function sanitizeID(raw) {
+  // Eliminar cualquier carácter que no sea letra o número
+  return raw.replace(/[^A-Z0-9]/g, '').trim();
+}
+
+function processNFCScan(rawData) {
+  const scannedId = sanitizeID(rawData.toUpperCase());
+  if (!scannedId) return;
+
+  // Visual feedback
+  setNFCStatus('scanning', scannedId);
+
+  const asset = allAssets.find(a => sanitizeID(a.id.toUpperCase()) === scannedId);
+
+  if (asset) {
+    // SUCCESS
+    addScanHistory(scannedId, asset.nombre, true);
+    setNFCStatus('success', asset.nombre);
+    showToast(`✓ ${asset.nombre}`, 'success');
+    setTimeout(() => {
+      stopNFCEngine();
+      viewAssetDetail(asset.id);
+    }, 600);
+  } else {
+    // NOT FOUND
+    addScanHistory(scannedId, null, false);
+    setNFCStatus('error', scannedId);
+    document.getElementById('scanner-error').textContent = `ID "${scannedId}" no encontrado en el sistema`;
+    document.getElementById('scanner-error').classList.remove('hidden');
+    showToast(`ID no registrado: ${scannedId}`, 'error');
+    // Volver a estado activo tras 2s
+    setTimeout(() => {
+      setNFCStatus('active');
+      document.getElementById('scanner-error').classList.add('hidden');
+    }, 2500);
+  }
+}
+
+function setNFCStatus(state, label) {
+  const icon = document.getElementById('nfc-icon-center');
+  const status = document.getElementById('nfc-status');
+
+  // Reset clases
+  icon.classList.remove('nfc-active', 'nfc-success', 'nfc-error-glow');
+
+  if (state === 'active') {
+    icon.classList.add('nfc-active');
+    status.innerHTML = `<div class="w-2 h-2 rounded-full bg-gold blink"></div><span class="text-gold text-sm font-medium">Esperando sticker NFC...</span>`;
+  } else if (state === 'scanning') {
+    icon.classList.add('nfc-active');
+    status.innerHTML = `<div class="w-2 h-2 rounded-full bg-yellow-400 blink"></div><span class="text-yellow-400 text-sm font-medium">Leyendo: ${label}</span>`;
+  } else if (state === 'success') {
+    icon.classList.add('nfc-success');
+    status.innerHTML = `<div class="w-2 h-2 rounded-full bg-green-400"></div><span class="text-green-400 text-sm font-medium">✓ ${label}</span>`;
+  } else if (state === 'error') {
+    icon.classList.add('nfc-error-glow');
+    status.innerHTML = `<div class="w-2 h-2 rounded-full bg-red-400"></div><span class="text-red-400 text-sm font-medium">No encontrado: ${label}</span>`;
+  }
+}
+
+function addScanHistory(id, name, success) {
+  scanHistory.unshift({ id, name, success, time: new Date() });
+  if (scanHistory.length > 5) scanHistory.pop();
+  renderScanHistory();
+}
+
+function renderScanHistory() {
+  const section = document.getElementById('scan-history-section');
+  const list = document.getElementById('scan-history-list');
+  if (scanHistory.length === 0) { section.classList.add('hidden'); return; }
+  section.classList.remove('hidden');
+  list.innerHTML = scanHistory.map(s => `
+    <div class="flex items-center justify-between py-2 border-b border-gray-700/50 last:border-0">
+      <div class="flex items-center gap-3">
+        <div class="w-6 h-6 rounded-full flex items-center justify-center ${s.success ? 'bg-green-500/20' : 'bg-red-500/20'}">
+          <span class="text-xs">${s.success ? '✓' : '✗'}</span>
+        </div>
+        <div>
+          <p class="text-sm text-white font-medium">${s.id}</p>
+          ${s.name ? `<p class="text-xs text-gray-500">${s.name}</p>` : '<p class="text-xs text-red-400">No registrado</p>'}
+        </div>
+      </div>
+      <span class="text-xs text-gray-600">${s.time.toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'})}</span>
+    </div>
+  `).join('');
+}
+
+// ============================================================
+//  DEMO DATA (localStorage para persistencia entre sesiones)
+// ============================================================
+function loadAssets() {
+  try {
+    const raw = localStorage.getItem('auroactivos_assets');
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+
+function saveAssets(assets) {
+  localStorage.setItem('auroactivos_assets', JSON.stringify(assets));
+}
+
+// ============================================================
+//  AUTH
+// ============================================================
+function handleLogin() {
+  const user = document.getElementById('login-user').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const errorEl = document.getElementById('login-error');
+  if (!user || !pass) {
+    errorEl.textContent = 'Por favor complete todos los campos';
+    errorEl.classList.remove('hidden'); return;
+  }
+  if (user === 'admin' && pass === 'admin123') {
+    isAuthenticated = true;
+    currentUser = { username: user, name: 'Administrador' };
+    errorEl.classList.add('hidden');
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('main-app').classList.remove('hidden');
+    allAssets = loadAssets();
+    filteredAssets = [...allAssets];
+    updateDashboard();
+    renderAssetsList();
+    showToast('¡Bienvenido a Auroactivos!', 'success');
+  } else {
+    errorEl.textContent = 'Usuario o contraseña incorrectos';
+    errorEl.classList.remove('hidden');
+  }
+}
+
+function handleLogout() {
+  isAuthenticated = false; currentUser = null;
+  stopNFCEngine();
+  document.getElementById('main-app').classList.add('hidden');
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
+  showView('dashboard');
+}
+
+// ============================================================
+//  NAVIGATION
+// ============================================================
+function showView(view) {
+  const views = ['dashboard', 'asset-detail', 'asset-form', 'scanner'];
+  views.forEach(v => document.getElementById(`${v}-view`).classList.add('hidden'));
+  document.getElementById(`${view}-view`).classList.remove('hidden');
+  currentView = view;
+
+  // Nav highlight
+  document.getElementById('nav-dashboard').className = `flex flex-col items-center gap-1 p-2 ${view === 'dashboard' ? 'text-gold' : 'text-gray-500'}`;
+  document.getElementById('nav-assets').className = `flex flex-col items-center gap-1 p-2 ${(view === 'asset-detail' || view === 'asset-form') ? 'text-gold' : 'text-gray-500'}`;
+
+  // NFC engine management
+  if (view === 'scanner') {
+    startNFCEngine();
+    setNFCStatus('active');
+  } else {
+    stopNFCEngine();
+  }
+}
+
+// ============================================================
+//  DEPRECIATION
+// ============================================================
+function calculateDepreciation(asset) {
+  const cost = parseFloat(asset.costo_inicial) || 0;
+  const salvage = parseFloat(asset.valor_rescate) || 0;
+  const lifeYears = parseFloat(asset.vida_util_anos) || 1;
+  const acquisitionDate = new Date(asset.fecha_adquisicion);
+  const today = new Date();
+  const yearsElapsed = (today - acquisitionDate) / (365.25 * 24 * 60 * 60 * 1000);
+  const annualDepreciation = (cost - salvage) / lifeYears;
+  const accumulatedDepreciation = Math.min(annualDepreciation * yearsElapsed, cost - salvage);
+  const bookValue = Math.max(cost - accumulatedDepreciation, salvage);
+  const remainingYears = Math.max(lifeYears - yearsElapsed, 0);
+  const lifeProgress = Math.min((yearsElapsed / lifeYears) * 100, 100);
+  return {
+    annualDepreciation: annualDepreciation.toFixed(2),
+    accumulatedDepreciation: accumulatedDepreciation.toFixed(2),
+    bookValue: bookValue.toFixed(2),
+    remainingYears: Math.floor(remainingYears),
+    remainingMonths: Math.round((remainingYears % 1) * 12),
+    lifeProgress: lifeProgress.toFixed(1),
+    isExpired: lifeProgress >= 100,
+    isNearExpiry: lifeProgress >= 80 && lifeProgress < 100
+  };
+}
+
+function formatCurrency(amount) {
+  return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
+}
+
+function formatDate(d) {
+  if (!d) return 'N/A';
+  return new Date(d + 'T12:00:00').toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+// ============================================================
+//  DASHBOARD
+// ============================================================
+function updateDashboard() {
+  let totalValue = 0, totalDepreciation = 0, totalBookValue = 0;
+  let criticalCount = 0;
+
+  allAssets.forEach(asset => {
+    const cost = parseFloat(asset.costo_inicial) || 0;
+    totalValue += cost;
+    const dep = calculateDepreciation(asset);
+    totalDepreciation += parseFloat(dep.accumulatedDepreciation);
+    totalBookValue += parseFloat(dep.bookValue);
+    if (dep.isExpired || dep.isNearExpiry) criticalCount++;
+  });
+
+  document.getElementById('stat-total-assets').textContent = allAssets.length;
+  document.getElementById('stat-total-value').textContent = formatCurrency(totalValue);
+  document.getElementById('stat-total-depreciation').textContent = formatCurrency(totalDepreciation);
+  document.getElementById('stat-book-value').textContent = formatCurrency(totalBookValue);
+
+  // Alert banner
+  const banner = document.getElementById('alert-banner');
+  if (criticalCount > 0) {
+    banner.classList.remove('hidden');
+    document.getElementById('alert-banner-text').textContent =
+      `⚠️ ${criticalCount} activo${criticalCount > 1 ? 's' : ''} con vida útil al 80% o más`;
+  } else {
+    banner.classList.add('hidden');
+  }
+}
+
+// ============================================================
+//  FILTER BY STATUS
+// ============================================================
+function filterByStatus(status) {
+  currentFilter = status;
+  document.querySelectorAll('.filter-chip').forEach(btn => {
+    const isActive = btn.dataset.filter === status;
+    btn.className = `filter-chip px-3 py-1.5 rounded-lg text-xs font-medium shrink-0 transition-all ${
+      isActive ? 'bg-gold/20 text-gold border border-gold/30' : 'bg-oxford-dark text-gray-400 border border-gray-700'
+    }`;
+  });
+  applyFilters();
+}
+
+function applyFilters() {
+  const query = (document.getElementById('search-input').value || '').toLowerCase().trim();
+  filteredAssets = allAssets.filter(asset => {
+    const matchStatus = currentFilter === 'todos' || (asset.estado || 'activo') === currentFilter;
+    const matchSearch = !query ||
+      asset.nombre.toLowerCase().includes(query) ||
+      asset.encargado.toLowerCase().includes(query) ||
+      asset.id.toLowerCase().includes(query) ||
+      (asset.ubicacion && asset.ubicacion.toLowerCase().includes(query));
+    return matchStatus && matchSearch;
+  });
+  renderAssetsList();
+}
+
+// ============================================================
+//  ASSETS LIST
+// ============================================================
+const categoryIcons = { equipos: '💻', maquinaria: '⚙️', vehiculos: '🚗', mobiliario: '🪑', herramientas: '🔧', otros: '📦' };
+const statusBadge = {
+  activo: '<span class="badge-activo px-2 py-0.5 rounded-md text-xs font-medium">Activo</span>',
+  mantenimiento: '<span class="badge-mantenimiento px-2 py-0.5 rounded-md text-xs font-medium">Mantenimiento</span>',
+  baja: '<span class="badge-baja px-2 py-0.5 rounded-md text-xs font-medium">Baja</span>',
+  extraviado: '<span class="badge-extraviado px-2 py-0.5 rounded-md text-xs font-medium">Extraviado</span>'
+};
+
+function renderAssetsList() {
+  const container = document.getElementById('assets-list');
+  document.getElementById('asset-count-badge').textContent = `${filteredAssets.length} activo${filteredAssets.length !== 1 ? 's' : ''}`;
+
+  if (filteredAssets.length === 0) {
+    container.innerHTML = `
+      <div class="glass-card rounded-xl p-8 text-center text-gray-500">
+        <svg class="w-12 h-12 mx-auto mb-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+        </svg>
+        <p class="font-medium">No hay activos</p>
+        <p class="text-sm mt-1">Presiona + para agregar uno</p>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = filteredAssets.map(asset => {
+    const dep = calculateDepreciation(asset);
+    const icon = categoryIcons[asset.categoria] || '📦';
+    const badge = statusBadge[asset.estado || 'activo'] || statusBadge.activo;
+    const progressColor = dep.isExpired ? 'bg-red-500' : dep.isNearExpiry ? 'bg-yellow-400' : 'gold-gradient';
+
+    return `
+      <div class="glass-card rounded-xl p-4 hover:border-gold/30 transition-all cursor-pointer active:scale-[0.98]"
+           onclick="viewAssetDetail('${asset.id}')">
+        <div class="flex items-start gap-3">
+          <div class="w-14 h-14 rounded-xl bg-gold/20 flex items-center justify-center text-2xl shrink-0">${icon}</div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-start justify-between gap-2 mb-1">
+              <div class="min-w-0">
+                <h4 class="font-semibold text-white truncate">${asset.nombre}</h4>
+                <p class="text-xs text-gray-500 font-mono">${asset.id}</p>
+              </div>
+              <div class="flex flex-col items-end gap-1 shrink-0">
+                <span class="text-xs bg-gold/20 text-gold px-2 py-0.5 rounded-lg font-medium">${formatCurrency(dep.bookValue)}</span>
+                ${badge}
+              </div>
+            </div>
+            <div class="flex items-center gap-3 text-xs text-gray-400 mt-1">
+              <span>👤 ${asset.encargado}</span>
+              <span>📍 ${asset.ubicacion || 'Sin ubicación'}</span>
+            </div>
+            <div class="mt-2">
+              <div class="flex items-center justify-between text-xs mb-1">
+                <span class="text-gray-500">Vida útil transcurrida</span>
+                <span class="${dep.isExpired ? 'text-red-400' : dep.isNearExpiry ? 'text-yellow-400' : 'text-gold'}">${dep.lifeProgress}%</span>
+              </div>
+              <div class="h-1.5 bg-oxford-dark rounded-full overflow-hidden">
+                <div class="h-full ${progressColor} rounded-full" style="width: ${dep.lifeProgress}%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ============================================================
+//  ASSET DETAIL
+// ============================================================
+function viewAssetDetail(assetId) {
+  const asset = allAssets.find(a => a.id === assetId);
+  if (!asset) { showToast('Activo no encontrado', 'error'); return; }
+  currentAssetId = assetId;
+  const dep = calculateDepreciation(asset);
+  const categoryNames = { equipos: 'Equipos de Cómputo', maquinaria: 'Maquinaria', vehiculos: 'Vehículos', mobiliario: 'Mobiliario', herramientas: 'Herramientas', otros: 'Otros' };
+  const badge = statusBadge[asset.estado || 'activo'] || statusBadge.activo;
+  const progressColor = dep.isExpired ? 'bg-red-500' : dep.isNearExpiry ? 'bg-yellow-400' : 'gold-gradient';
+
+  document.getElementById('asset-detail-content').innerHTML = `
+    <!-- Header Card -->
+    <div class="glass-card rounded-2xl overflow-hidden">
+      ${asset.foto_url ? `
+        <div class="h-48 bg-oxford-dark relative">
+          <img src="${asset.foto_url}" alt="${asset.nombre}" class="w-full h-full object-cover"
+            onerror="this.style.display='none'">
+        </div>` : `
+        <div class="h-24 bg-gradient-to-br from-gold/20 to-oxford-dark flex items-center justify-center">
+          <span class="text-5xl">${categoryIcons[asset.categoria] || '📦'}</span>
+        </div>`}
+      <div class="p-5">
+        <div class="flex items-start justify-between">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 mb-1 flex-wrap">
+              <span class="px-2 py-1 text-xs bg-gold/20 text-gold rounded-lg font-mono">${asset.id}</span>
+              ${badge}
+            </div>
+            <h2 class="text-xl font-display font-bold text-white mt-1">${asset.nombre}</h2>
+            <p class="text-gray-400 text-sm">${categoryNames[asset.categoria] || 'Sin categoría'}</p>
+          </div>
+          <div class="flex gap-2 shrink-0 ml-3">
+            <button onclick="editAsset('${asset.id}')" class="p-2 rounded-lg bg-oxford-light hover:bg-oxford transition-colors">
+              <svg class="w-5 h-5 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+            </button>
+            <button onclick="confirmDelete('${asset.id}')" class="p-2 rounded-lg bg-red-900/30 hover:bg-red-900/50 transition-colors">
+              <svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Info Grid -->
+    <div class="grid grid-cols-2 gap-3 mt-4">
+      <div class="glass-card rounded-xl p-4"><p class="text-xs text-gray-500 mb-1">Fecha Adquisición</p><p class="text-white font-medium text-sm">${formatDate(asset.fecha_adquisicion)}</p></div>
+      <div class="glass-card rounded-xl p-4"><p class="text-xs text-gray-500 mb-1">Encargado</p><p class="text-white font-medium text-sm truncate">${asset.encargado}</p></div>
+      <div class="glass-card rounded-xl p-4"><p class="text-xs text-gray-500 mb-1">Ubicación</p><p class="text-white font-medium text-sm">${asset.ubicacion || 'No especificada'}</p></div>
+      <div class="glass-card rounded-xl p-4"><p class="text-xs text-gray-500 mb-1">No. Serie</p><p class="text-white font-medium text-sm font-mono">${asset.numero_serie || 'N/A'}</p></div>
+      ${asset.proveedor ? `<div class="glass-card rounded-xl p-4"><p class="text-xs text-gray-500 mb-1">Proveedor</p><p class="text-white font-medium text-sm">${asset.proveedor}</p></div>` : ''}
+      ${asset.garantia_hasta ? `<div class="glass-card rounded-xl p-4"><p class="text-xs text-gray-500 mb-1">Garantía hasta</p><p class="text-white font-medium text-sm">${formatDate(asset.garantia_hasta)}</p></div>` : ''}
+      ${asset.ultimo_mantenimiento ? `<div class="glass-card rounded-xl p-4 col-span-2"><p class="text-xs text-gray-500 mb-1">Último mantenimiento</p><p class="text-white font-medium text-sm">${formatDate(asset.ultimo_mantenimiento)}</p></div>` : ''}
+    </div>
+
+    <!-- Financial -->
+    <div class="glass-card rounded-2xl p-5 mt-4">
+      <h3 class="text-base font-semibold text-white mb-4 flex items-center gap-2">
+        <svg class="w-5 h-5 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+        Información Financiera
+      </h3>
+      <div class="space-y-3">
+        <div class="flex justify-between items-center py-2 border-b border-gray-700/50"><span class="text-gray-400 text-sm">Costo Inicial</span><span class="text-white font-semibold">${formatCurrency(asset.costo_inicial)}</span></div>
+        <div class="flex justify-between items-center py-2 border-b border-gray-700/50"><span class="text-gray-400 text-sm">Valor de Rescate</span><span class="text-white font-medium">${formatCurrency(asset.valor_rescate || 0)}</span></div>
+        <div class="flex justify-between items-center py-2 border-b border-gray-700/50"><span class="text-gray-400 text-sm">Vida Útil</span><span class="text-white font-medium">${asset.vida_util_anos} años</span></div>
+        <div class="flex justify-between items-center py-2 border-b border-gray-700/50"><span class="text-gray-400 text-sm">Depreciación Anual</span><span class="text-yellow-400 font-medium">${formatCurrency(dep.annualDepreciation)}</span></div>
+        <div class="flex justify-between items-center py-2 border-b border-gray-700/50"><span class="text-gray-400 text-sm">Depreciación Acumulada</span><span class="text-red-400 font-semibold">${formatCurrency(dep.accumulatedDepreciation)}</span></div>
+        <div class="flex justify-between items-center py-2 bg-gold/10 rounded-xl px-3 -mx-1"><span class="text-gold font-medium text-sm">Valor Contable Actual</span><span class="text-gold font-bold text-lg">${formatCurrency(dep.bookValue)}</span></div>
+      </div>
+    </div>
+
+    <!-- Life Progress -->
+    <div class="glass-card rounded-2xl p-5 mt-4">
+      <h3 class="text-base font-semibold text-white mb-4 flex items-center gap-2">
+        <svg class="w-5 h-5 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Vida Útil Restante
+      </h3>
+      <div class="mb-4">
+        <div class="flex justify-between text-sm mb-2">
+          <span class="text-gray-400">Progreso de depreciación</span>
+          <span class="${dep.isExpired ? 'text-red-400' : dep.isNearExpiry ? 'text-yellow-400' : 'text-gold'} font-medium">${dep.lifeProgress}%</span>
+        </div>
+        <div class="h-4 bg-oxford-dark rounded-full overflow-hidden">
+          <div class="h-full ${progressColor} rounded-full" style="width: ${dep.lifeProgress}%"></div>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-4 text-center">
+        <div class="bg-oxford-dark rounded-xl p-4"><p class="text-3xl font-bold text-white">${dep.remainingYears}</p><p class="text-xs text-gray-500 mt-1">Años restantes</p></div>
+        <div class="bg-oxford-dark rounded-xl p-4"><p class="text-3xl font-bold text-white">${dep.remainingMonths}</p><p class="text-xs text-gray-500 mt-1">Meses adicionales</p></div>
+      </div>
+      ${dep.isExpired ? `<div class="mt-4 p-3 bg-red-900/30 border border-red-500/30 rounded-xl text-center"><p class="text-red-400 font-medium text-sm">⚠️ Este activo ha completado su vida útil</p></div>` : ''}
+      ${dep.isNearExpiry && !dep.isExpired ? `<div class="mt-4 p-3 bg-yellow-900/30 border border-yellow-500/30 rounded-xl text-center"><p class="text-yellow-400 font-medium text-sm">⚡ Activo próximo a vencer (${100 - parseFloat(dep.lifeProgress)}% restante)</p></div>` : ''}
+    </div>
+  `;
+
+  showView('asset-detail');
+}
+
+// ============================================================
+//  ASSET FORM
+// ============================================================
+function showAddAssetForm() {
+  editingAsset = null;
+  document.getElementById('form-title').textContent = 'Nuevo Activo';
+  document.getElementById('save-btn-text').textContent = 'Guardar Activo';
+  document.getElementById('asset-id').disabled = false;
+  clearForm();
+  showView('asset-form');
+}
+
+function editAsset(assetId) {
+  const asset = allAssets.find(a => a.id === assetId);
+  if (!asset) return;
+  editingAsset = asset;
+  document.getElementById('form-title').textContent = 'Editar Activo';
+  document.getElementById('save-btn-text').textContent = 'Actualizar Activo';
+  document.getElementById('asset-id').disabled = true;
+  document.getElementById('asset-id').value = asset.id;
+  document.getElementById('asset-name').value = asset.nombre;
+  document.getElementById('asset-photo').value = asset.foto_url || '';
+  document.getElementById('asset-date').value = asset.fecha_adquisicion;
+  document.getElementById('asset-status').value = asset.estado || 'activo';
+  document.getElementById('asset-manager').value = asset.encargado;
+  document.getElementById('asset-cost').value = asset.costo_inicial;
+  document.getElementById('asset-salvage').value = asset.valor_rescate || '';
+  document.getElementById('asset-life').value = asset.vida_util_anos;
+  document.getElementById('asset-category').value = asset.categoria || 'otros';
+  document.getElementById('asset-location').value = asset.ubicacion || '';
+  document.getElementById('asset-serial').value = asset.numero_serie || '';
+  document.getElementById('asset-supplier').value = asset.proveedor || '';
+  document.getElementById('asset-warranty').value = asset.garantia_hasta || '';
+  document.getElementById('asset-maintenance').value = asset.ultimo_mantenimiento || '';
+  showView('asset-form');
+}
+
+function clearForm() {
+  ['asset-id','asset-name','asset-photo','asset-manager','asset-cost','asset-salvage','asset-life','asset-location','asset-serial','asset-supplier','asset-warranty','asset-maintenance'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('asset-date').value = '';
+  document.getElementById('asset-status').value = 'activo';
+  document.getElementById('asset-category').value = 'equipos';
+  document.getElementById('form-error').classList.add('hidden');
+}
+
+function saveAsset() {
+  const errorEl = document.getElementById('form-error');
+  const id = document.getElementById('asset-id').value.trim();
+  const nombre = document.getElementById('asset-name').value.trim();
+  const fecha = document.getElementById('asset-date').value;
+  const encargado = document.getElementById('asset-manager').value.trim();
+  const costo = document.getElementById('asset-cost').value;
+  const vida = document.getElementById('asset-life').value;
+
+  if (!id || !nombre || !fecha || !encargado || !costo || !vida) {
+    errorEl.textContent = 'Por favor complete todos los campos requeridos (*)';
+    errorEl.classList.remove('hidden'); return;
+  }
+  if (!editingAsset && allAssets.some(a => a.id === id)) {
+    errorEl.textContent = 'Ya existe un activo con este ID'; errorEl.classList.remove('hidden'); return;
+  }
+
+  const assetData = {
+    id,
+    nombre,
+    foto_url: document.getElementById('asset-photo').value.trim(),
+    fecha_adquisicion: fecha,
+    estado: document.getElementById('asset-status').value,
+    encargado,
+    costo_inicial: parseFloat(costo),
+    valor_rescate: parseFloat(document.getElementById('asset-salvage').value) || 0,
+    vida_util_anos: parseFloat(vida),
+    categoria: document.getElementById('asset-category').value,
+    ubicacion: document.getElementById('asset-location').value.trim(),
+    numero_serie: document.getElementById('asset-serial').value.trim(),
+    proveedor: document.getElementById('asset-supplier').value.trim(),
+    garantia_hasta: document.getElementById('asset-warranty').value,
+    ultimo_mantenimiento: document.getElementById('asset-maintenance').value
+  };
+
+  if (editingAsset) {
+    const idx = allAssets.findIndex(a => a.id === editingAsset.id);
+    allAssets[idx] = assetData;
+  } else {
+    allAssets.push(assetData);
+  }
+
+  saveAssets(allAssets);
+  filteredAssets = [...allAssets];
+  updateDashboard();
+  renderAssetsList();
+  showToast(editingAsset ? 'Activo actualizado exitosamente' : 'Activo creado exitosamente', 'success');
+  showView('dashboard');
+}
+
+// ============================================================
+//  DELETE
+// ============================================================
+function confirmDelete(assetId) {
+  const asset = allAssets.find(a => a.id === assetId);
+  if (!asset) return;
+  assetToDelete = asset;
+  document.getElementById('delete-asset-name').textContent = `¿Está seguro de eliminar "${asset.nombre}"?`;
+  document.getElementById('delete-modal').classList.remove('hidden');
+}
+
+function deleteAsset() {
+  if (!assetToDelete) return;
+  allAssets = allAssets.filter(a => a.id !== assetToDelete.id);
+  saveAssets(allAssets);
+  filteredAssets = [...allAssets];
+  updateDashboard();
+  renderAssetsList();
+  showToast('Activo eliminado exitosamente', 'success');
+  document.getElementById('delete-modal').classList.add('hidden');
+  assetToDelete = null;
+  showView('dashboard');
+}
+
+// ============================================================
+//  MANUAL SCANNER SEARCH
+// ============================================================
+function searchAssetByManualId() {
+  const val = document.getElementById('manual-asset-id').value.trim();
+  if (!val) {
+    document.getElementById('scanner-error').textContent = 'Ingresa un ID';
+    document.getElementById('scanner-error').classList.remove('hidden');
+    return;
+  }
+  processNFCScan(val);
+  document.getElementById('manual-asset-id').value = '';
+}
+
+// ============================================================
+//  TOAST
+// ============================================================
+let toastTimer = null;
+function showToast(message, type = 'info') {
+  const toast = document.getElementById('toast');
+  const icon = document.getElementById('toast-icon');
+  document.getElementById('toast-message').textContent = message;
+  const cfg = {
+    success: { bg: 'bg-green-500/20', svg: '<svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>' },
+    error:   { bg: 'bg-red-500/20',   svg: '<svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>' },
+    info:    { bg: 'bg-blue-500/20',  svg: '<svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>' }
+  };
+  icon.className = `w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${cfg[type].bg}`;
+  icon.innerHTML = cfg[type].svg;
+  toast.classList.remove('hidden');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.add('hidden'), 3500);
+}
+
+// ============================================================
+//  EVENT LISTENERS
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  // Initial render
+  allAssets = loadAssets();
+  filteredAssets = [...allAssets];
+
+  // Login
+  document.getElementById('login-btn').addEventListener('click', handleLogin);
+  document.getElementById('login-pass').addEventListener('keypress', e => { if (e.key === 'Enter') handleLogin(); });
+
+  // Logout
+  document.getElementById('logout-btn').addEventListener('click', handleLogout);
+
+  // Nav
+  document.getElementById('nav-dashboard').addEventListener('click', () => showView('dashboard'));
+  document.getElementById('nav-scan').addEventListener('click', () => showView('scanner'));
+  document.getElementById('nav-assets').addEventListener('click', () => showView('dashboard'));
+
+  // Back buttons
+  document.getElementById('back-to-dashboard').addEventListener('click', () => showView('dashboard'));
+  document.getElementById('back-from-form').addEventListener('click', () => showView('dashboard'));
+  document.getElementById('back-from-scanner').addEventListener('click', () => {
+    stopNFCEngine();
+    showView('dashboard');
+  });
+
+  // Add / Save
+  document.getElementById('add-asset-btn').addEventListener('click', showAddAssetForm);
+  document.getElementById('save-asset-btn').addEventListener('click', saveAsset);
+
+  // Manual scanner
+  document.getElementById('search-asset-btn').addEventListener('click', searchAssetByManualId);
+  document.getElementById('manual-asset-id').addEventListener('keypress', e => {
+    if (e.key === 'Enter') searchAssetByManualId();
+  });
+  // When user clicks on manual input, pause the global NFC listener briefly
+  document.getElementById('manual-asset-id').addEventListener('focus', () => { nfcScannerActive = false; });
+  document.getElementById('manual-asset-id').addEventListener('blur', () => {
+    if (currentView === 'scanner') nfcScannerActive = true;
+  });
+
+  // Search filter
+  document.getElementById('search-input').addEventListener('input', applyFilters);
+
+  // Delete modal
+  document.getElementById('cancel-delete').addEventListener('click', () => {
+    document.getElementById('delete-modal').classList.add('hidden'); assetToDelete = null;
+  });
+  document.getElementById('confirm-delete').addEventListener('click', deleteAsset);
+
+  // Toast close
+  document.getElementById('toast-close').addEventListener('click', () => {
+    document.getElementById('toast').classList.add('hidden');
+  });
+});
+</script>
+</body>
+</html>
